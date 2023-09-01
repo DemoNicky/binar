@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="chapter1:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/chapter1_jar</output-path>
+    <root id="archive" name="chapter1.jar">
+      <element id="module-output" name="binarLearn" />
+    </root>
+  </artifact>
+</component>

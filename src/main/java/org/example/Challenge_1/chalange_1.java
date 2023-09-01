@@ -1,5 +1,7 @@
-package org.example;
+package org.example.Challenge_1;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class chalange_1 {
@@ -21,14 +23,14 @@ public class chalange_1 {
     public static int total = 0;
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         mainMenu();
     }
 
     /**
      * method main menu/menu utama
      */
-    public static void mainMenu(){
+    public static void mainMenu() throws IOException {
         System.out.println("================================");
         System.out.println("Selamat datang di BinarFud");
         System.out.println("================================");
@@ -49,21 +51,22 @@ public class chalange_1 {
 
     /**
      * method di bawah di gunakan untuk menetapkan berapa baanyak pesanan
+     *
      * @param pilih
      */
-    public static void qtyPesanan(Integer pilih){
+    public static void qtyPesanan(Integer pilih) throws IOException {
         //di bawah adalah perkondisian, ketika parameter pilih terisi 99 makan akan hit ke method konfAndPayment
         //dan jika memilih 0 maka akan keluar dari program
         //jika memilih angka lebih dari 1 dan kurang dari menu.length atau kurang dari 5 akan mendirect ke method menuJumlahPesanan
         //dan jika pilihan tidak ada yang benar akan muncul output pilihan tidak valid dan direct ke method mainMenu
-        if (pilih == 99){
+        if (pilih == 99) {
             konfAndPayment();
         } else if (pilih == 0) {
             System.out.println("Terima kasih!");
             System.exit(0);
         } else if (pilih >= 1 && pilih <= menu.length) {
             menuJumlahPesanan(pilih);
-        }else {
+        } else {
             System.out.println("Pilihan tidak Valid !!!");
             mainMenu();
         }
@@ -71,9 +74,10 @@ public class chalange_1 {
 
     /**
      * method untuk menu jumlah pesanan
+     *
      * @param pilihanMenu
      */
-    public static void menuJumlahPesanan(Integer pilihanMenu){
+    public static void menuJumlahPesanan(Integer pilihanMenu) throws IOException {
         //variabel ulang digunakan pada while loop jika true maka akan di ulang lagi dan jika ulang false maka perulangan terhenti dan kembali ke menu utama
         boolean ulang = true;
         while (ulang) {
@@ -102,13 +106,13 @@ public class chalange_1 {
     /**
      * method untuk konfirmasi pembayaran
      */
-    public static void konfAndPayment(){
+    public static void konfAndPayment() throws IOException {
         System.out.println("========================");
         System.out.println("Konfirmasi & pembayaran");
         System.out.println("========================");
         //for loop di gunakan untuk perulangan ketika ada lebih dari satu menu yang di pilih, maka akan banyak menu yang tampil
         for (int i = 0; i < menu.length; i++) {
-            if (jumlahOrder[i] > 0){
+            if (jumlahOrder[i] > 0) {
                 //variabel di bawah adalah perkalian untuk menghitung sub total per barang
                 int subTotal = hargaMenu[i] * jumlahOrder[i];
                 System.out.println(menu[i] + "\t" + jumlahOrder[i] + "\tRp. " + subTotal);
@@ -123,7 +127,7 @@ public class chalange_1 {
         System.out.println("0. Keluar aplikasi");
         System.out.print("Pilih: ");
         int pilih = scanner.nextInt();
-        if (pilih == 1){
+        if (pilih == 1) {
             cetakStrukTransaksi();
         } else if (pilih == 2) {
             mainMenu();
@@ -135,25 +139,24 @@ public class chalange_1 {
     /**
      * method untuk mencetak struk transaksi
      */
-    public static void cetakStrukTransaksi(){
-        System.out.println("========================");
-        System.out.println("Struk BinarFud");
-        System.out.println("========================");
-        System.out.println("Terima kasih sudah memesan di Binarfud");
-        System.out.println("Dibawah ini adalah pesanan anda\n");
-        //for loop di gunakan untuk perulangan ketika ada lebih dari satu menu yang di pilih, maka akan banyak menu yang tampil
+    public static void cetakStrukTransaksi() throws IOException {
+        FileWriter writer = new FileWriter("receipt.txt");
+        writer.write("========================\n");
+        writer.write("Struk BinarFud\n");
+        writer.write("========================\n");
+        writer.write("Terima kasih sudah memesan di Binarfud\n");
+        writer.write("Dibawah ini adalah pesanan anda\n\n");
         for (int i = 0; i < menu.length; i++) {
-            if (jumlahOrder[i] > 0){
-                //variabel di bawah adalah perkalian untuk menghitung sub total per barang
-                int y = hargaMenu[i] * jumlahOrder[i];
-                System.out.println(menu[i] + "\t" + jumlahOrder[i] + "\tRp. " + y);
+            if (jumlahOrder[i] > 0) {
+                int subtotal = hargaMenu[i] * jumlahOrder[i];
+                writer.write(menu[i] + "\t" + jumlahOrder[i] + "\tRp. " + subtotal + "\n");
             }
         }
-        System.out.println("------------------------+");
-        //total di ambil dari variabel global yang di kalikan pada method konfAndPayment
-        System.out.println("Total \t\tRp " + total);
-        System.out.println("\nPembayaran : BinarCash");
-        System.out.println("========================");
-        System.out.println("Simpan struk ini sebagai\nbukti pembayaran");
+        writer.write("------------------------+\n");
+        writer.write("Total \t\tRp " + total + "\n\n");
+        writer.write("Pembayaran : BinarCash\n");
+        writer.write("========================\n");
+        writer.write("Simpan struk ini sebagai\nbukti pembayaran\n");
+        writer.close();
     }
 }
