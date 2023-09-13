@@ -1,10 +1,8 @@
 ========================
 Struk BinarFud
 ========================
-Nasi Goreng	2	Rp. 30000
-Nasi + Ayam	2	Rp. 36000
 ------------------------+
-Total		4	Rp 66000
+Total		0	Rp 0
 
 Pembayaran : BinarCash
 ========================
