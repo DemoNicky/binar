@@ -7,8 +7,8 @@ import java.util.Scanner;
 
 public class MainApp {
     private final Scanner scanner;
-    private final DaftarMenu daftarMenu;
-    private final Pesanan pesanan;
+    public final DaftarMenu daftarMenu;
+    public final Pesanan pesanan;
 
     public MainApp() {
         scanner = new Scanner(System.in);

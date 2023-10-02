@@ -19,3 +19,5 @@ a
 +src/test/java/Challange_3Test/MenuTest.java,0\e\0e67ecc83a2333ee68e24b3cee67e278682a2ac6
 ^
 .src/test/java/Challange_3Test/PesananTest.java,a\2\a25bc64ba398beb551f2c6cb3d0954a7afad8780
+b
+2src/main/java/org/example/hackRank/firstClass.java,4\0\40671051f95d1aa738fc1f69d1387447814e5c82
