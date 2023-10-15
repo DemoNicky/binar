@@ -13,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,9 +65,9 @@ public class OrderServiceImpl implements OrderService {
 
         List<ProductOrderResponseDTO> productResponseDTOS = getProductOrderResponseDTOS(orderDetails);
 
-        BigDecimal totalPrice = getBigDecimal(productResponseDTOS);
-
         int qty = getQty(orderDetails);
+
+        BigDecimal totalPrice = getBigDecimal(orderDetails);
 
         OrderDetailResponseDTO orderDetailResponseDTO = new OrderDetailResponseDTO();
         orderDetailResponseDTO.setTotalPrice(totalPrice);
@@ -80,6 +77,123 @@ public class OrderServiceImpl implements OrderService {
         response.setMessage("success to order");
         response.setData(responseDTO);
         return response;
+    }
+
+    @Override
+    public ResponseHandling<OrderPaymentResponseDTO> payment(String code) {
+        Optional<Order> order = orderRepository.findByOrderCode(code);
+        ResponseHandling<OrderPaymentResponseDTO> response = new ResponseHandling<>();
+        if (!order.isPresent()){
+            response.setMessage("fail to pay");
+            response.setErrors("code not found");
+            return response;
+        }
+        Order order1 = order.get();
+        order1.setCompleted(true);
+        orderRepository.save(order1);
+
+        OrderPaymentResponseDTO orderPaymentResponse = new OrderPaymentResponseDTO();
+        orderPaymentResponse.setOrderCode(order1.getOrderCode());
+        orderPaymentResponse.setUsername(order1.getUser().getUsername());
+        orderPaymentResponse.setAddress(order1.getDestinationAddress());
+        orderPaymentResponse.setOrderTime(order1.getOrderTime());
+        orderPaymentResponse.setPayment("paid");
+
+        List<ProductOrderResponseDTO> productOrderResponseDTOS = getProductOrderResponseDTOS(order1);
+
+        int qty = getAnInt(productOrderResponseDTOS);
+        BigDecimal totalPrice = getTotalPrice(productOrderResponseDTOS);
+
+        OrderDetailResponseDTO responseDTO = new OrderDetailResponseDTO();
+        responseDTO.setQuantity(qty);
+        responseDTO.setTotalPrice(totalPrice);
+        responseDTO.setProductOrderResponseDTO(productOrderResponseDTOS);
+        orderPaymentResponse.setOrderDetailResponseDTO(responseDTO);
+        response.setData(orderPaymentResponse);
+        response.setMessage("successfully paid the product !!!");
+        return response;
+    }
+
+    @Override
+    public ResponseHandling<List<OrderGetResponseDTO>> getOrder(String usercode) {
+        Optional<List<Order>> order = orderRepository.findByUserCode(usercode);
+        ResponseHandling<List<OrderGetResponseDTO>> response = new ResponseHandling<>();
+        if (!order.isPresent()){
+            response.setMessage("fail to get data");
+            response.setErrors("user with code " +usercode+ " not found");
+            return response;
+        }
+        List<Order> orderList = order.get();
+        List<OrderGetResponseDTO> orders = orderList.stream().map((p)->{
+            OrderGetResponseDTO responseDTO = new OrderGetResponseDTO();
+            responseDTO.setOrderCode(p.getOrderCode());
+            responseDTO.setAddress(p.getDestinationAddress());
+            responseDTO.setOrderTime(p.getOrderTime());
+            responseDTO.setPaymentStatus(p.getCompleted() ? "Paid" : "Unpaid");
+
+            List<ProductOrderResponseDTO> productOrderResponse = new ArrayList<>();
+            for (OrderDetail orderDetail : p.getOrderDetail()){
+                ProductOrderResponseDTO responseDTO1 = new ProductOrderResponseDTO();
+                responseDTO1.setProductCode(orderDetail.getProduct().getProductCode());
+                responseDTO1.setProductName(orderDetail.getProduct().getProductName());
+                responseDTO1.setPrice(orderDetail.getProduct().getPrice());
+                responseDTO1.setMerchantCode(orderDetail.getProduct().getMerchant().getMerchantCode());
+                responseDTO1.setMerchantName(orderDetail.getProduct().getMerchant().getMerchantName());
+                responseDTO1.setQty(orderDetail.getQuantity());
+                productOrderResponse.add(responseDTO1);
+            }
+
+            OrderDetailResponseDTO orderDetailResponse = new OrderDetailResponseDTO();
+            int qty = 0;
+            BigDecimal totalPrice = BigDecimal.ZERO;
+            for (OrderDetail orderDetail : p.getOrderDetail()){
+                qty += orderDetail.getQuantity();
+                BigDecimal quantity = new BigDecimal(orderDetail.getQuantity());
+                totalPrice.multiply(quantity);
+            }
+            orderDetailResponse.setQuantity(qty);
+            orderDetailResponse.setTotalPrice(totalPrice);
+            orderDetailResponse.setProductOrderResponseDTO(productOrderResponse);
+            responseDTO.setOrderDetailResponseDTO(orderDetailResponse);
+            return responseDTO;
+        }).collect(Collectors.toList());
+
+        response.setData(orders);
+        response.setMessage("success get data");
+        return response;
+    }
+
+    private List<ProductOrderResponseDTO> getProductOrderResponseDTOS(Order order1) {
+        List<ProductOrderResponseDTO> productOrderResponseDTOS = order1.getOrderDetail().stream().map((p)->{
+            ProductOrderResponseDTO responseDTO = new ProductOrderResponseDTO();
+            responseDTO.setProductCode(p.getProduct().getProductCode());
+            responseDTO.setProductName(p.getProduct().getProductName());
+            responseDTO.setPrice(p.getProduct().getPrice());
+            responseDTO.setMerchantCode(p.getProduct().getMerchant().getMerchantCode());
+            responseDTO.setMerchantName(p.getProduct().getMerchant().getMerchantName());
+            responseDTO.setQty(p.getQuantity());
+            return responseDTO;
+        }).collect(Collectors.toList());
+        return productOrderResponseDTOS;
+    }
+
+    private BigDecimal getTotalPrice(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        for (ProductOrderResponseDTO responseDTO: productOrderResponseDTOS){
+            BigDecimal productPrice = responseDTO.getPrice();
+            BigDecimal quantity = new BigDecimal(responseDTO.getQty());
+            BigDecimal total = productPrice.multiply(quantity);
+            totalPrice = totalPrice.add(total);
+        }
+        return totalPrice;
+    }
+
+    private int getAnInt(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+        int qty = 0;
+        for (ProductOrderResponseDTO res : productOrderResponseDTOS){
+            qty += res.getQty();
+        }
+        return qty;
     }
 
     private List<OrderDetail> getOrderDetails(OrderDTO orderDTO) {
@@ -111,10 +225,13 @@ public class OrderServiceImpl implements OrderService {
         return productResponseDTOS;
     }
 
-    private BigDecimal getBigDecimal(List<ProductOrderResponseDTO> productResponseDTOS) {
+    private BigDecimal getBigDecimal(List<OrderDetail> orderDetails) {
         BigDecimal totalPrice = BigDecimal.ZERO;
-        for (ProductOrderResponseDTO detail : productResponseDTOS) {
-            totalPrice = totalPrice.add(detail.getPrice());
+        for (OrderDetail detail : orderDetails) {
+            BigDecimal productPrice = detail.getProduct().getPrice();
+            BigDecimal quantity = new BigDecimal(detail.getQuantity());
+            BigDecimal total = productPrice.multiply(quantity);
+            totalPrice = totalPrice.add(total);
         }
         return totalPrice;
     }

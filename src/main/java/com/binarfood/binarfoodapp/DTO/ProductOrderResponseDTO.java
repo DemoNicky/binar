@@ -19,4 +19,6 @@ public class ProductOrderResponseDTO {
 
     private String merchantName;
 
+    private int qty;
+
 }
