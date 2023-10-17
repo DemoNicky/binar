@@ -9,15 +9,25 @@ import com.binarfood.binarfoodapp.Repository.OrderRepository;
 import com.binarfood.binarfoodapp.Repository.ProductRepository;
 import com.binarfood.binarfoodapp.Repository.UserRepository;
 import com.binarfood.binarfoodapp.Service.OrderService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 
+import java.io.*;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -27,6 +37,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserRepository userRepository;
+
+
 
     @Override
     public ResponseHandling<OrderResponseDTO> createOrder(OrderDTO orderDTO) {
@@ -80,7 +92,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ResponseHandling<OrderPaymentResponseDTO> payment(String code) {
+    public ResponseHandling<OrderPaymentResponseDTO> payment(String code) throws FileNotFoundException, JRException {
         Optional<Order> order = orderRepository.findByOrderCode(code);
         ResponseHandling<OrderPaymentResponseDTO> response = new ResponseHandling<>();
         if (!order.isPresent()){
@@ -96,7 +108,9 @@ public class OrderServiceImpl implements OrderService {
         orderPaymentResponse.setOrderCode(order1.getOrderCode());
         orderPaymentResponse.setUsername(order1.getUser().getUsername());
         orderPaymentResponse.setAddress(order1.getDestinationAddress());
-        orderPaymentResponse.setOrderTime(order1.getOrderTime());
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy hh:mm");
+        String formattedOrderTime = sdf.format(order1.getOrderTime());
+        orderPaymentResponse.setOrderTime(formattedOrderTime);
         orderPaymentResponse.setPayment("paid");
 
         List<ProductOrderResponseDTO> productOrderResponseDTOS = getProductOrderResponseDTOS(order1);
@@ -111,7 +125,51 @@ public class OrderServiceImpl implements OrderService {
         orderPaymentResponse.setOrderDetailResponseDTO(responseDTO);
         response.setData(orderPaymentResponse);
         response.setMessage("successfully paid the product !!!");
+
+        //jasper
+        File file = ResourceUtils.getFile("classpath:recipt.jrxml");
+        JasperReport jasperReport = JasperCompileManager.compileReport(file.getAbsolutePath());
+        List<CustomFileDTO> customFileDTOList = new ArrayList<>();
+        CustomFileDTO customFileDTO = new CustomFileDTO();
+        customFileDTO.setOrderCode(orderPaymentResponse.getOrderCode());
+        customFileDTO.setUsername(orderPaymentResponse.getUsername());
+        customFileDTO.setAddress(orderPaymentResponse.getAddress());
+        customFileDTO.setPayment(orderPaymentResponse.getPayment());
+        customFileDTO.setOrderTime(orderPaymentResponse.getOrderTime());
+        customFileDTO.setQuantity(responseDTO.getQuantity());
+        customFileDTO.setTotalPrice(responseDTO.getTotalPrice());
+
+
+        List<CustomFileDTO> customFileProduct = getCustomFileDTOS(productOrderResponseDTOS);
+
+
+        customFileDTOList.add(customFileDTO);
+        customFileDTOList.addAll(customFileProduct);
+
+        jasperBuild(jasperReport, customFileDTOList);
+
         return response;
+    }
+
+    private void jasperBuild(JasperReport jasperReport, List<CustomFileDTO> customFileDTOList) throws JRException {
+        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(customFileDTOList);
+        Map<String, Object> parameter = new HashMap<>();
+        parameter.put("created By", "Arda");
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameter, dataSource);
+        JasperExportManager.exportReportToPdfFile(jasperPrint, "C:\\Binar\\pdf\\recipt.pdf");
+    }
+
+    private List<CustomFileDTO> getCustomFileDTOS(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+        List<CustomFileDTO> customFileProduct = productOrderResponseDTOS.stream().map((p)->{
+            CustomFileDTO customFileProductDTO = new CustomFileDTO();
+            customFileProductDTO.setProductCode(p.getProductCode());
+            customFileProductDTO.setProductName(p.getProductName());
+            customFileProductDTO.setPrice(p.getPrice());
+            customFileProductDTO.setMerchantName(p.getMerchantName());
+            customFileProductDTO.setQty(p.getQty());
+            return customFileProductDTO;
+        }).collect(Collectors.toList());
+        return customFileProduct;
     }
 
     @Override

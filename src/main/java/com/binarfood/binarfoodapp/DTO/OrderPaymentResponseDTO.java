@@ -1,12 +1,16 @@
 package com.binarfood.binarfoodapp.DTO;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderPaymentResponseDTO {
 
     private String orderCode;
@@ -15,7 +19,7 @@ public class OrderPaymentResponseDTO {
 
     private String address;
 
-    private Date orderTime;
+    private String orderTime;
 
     private String payment;
 

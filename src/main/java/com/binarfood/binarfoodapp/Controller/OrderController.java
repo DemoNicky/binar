@@ -2,12 +2,14 @@ package com.binarfood.binarfoodapp.Controller;
 
 import com.binarfood.binarfoodapp.DTO.*;
 import com.binarfood.binarfoodapp.Service.OrderService;
+import net.sf.jasperreports.engine.JRException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
 @RestController
@@ -33,7 +35,7 @@ public class OrderController {
             path = "/{ordercode}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ResponseHandling<OrderPaymentResponseDTO>>payment(@PathVariable("ordercode")String code){
+    public ResponseEntity<ResponseHandling<OrderPaymentResponseDTO>>payment(@PathVariable("ordercode")String code) throws JRException, FileNotFoundException {
         ResponseHandling<OrderPaymentResponseDTO> response = orderService.payment(code);
         if (response.getData()==null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
