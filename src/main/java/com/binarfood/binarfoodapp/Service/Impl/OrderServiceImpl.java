@@ -99,10 +99,6 @@ public class OrderServiceImpl implements OrderService {
             response.setMessage("fail to pay");
             response.setErrors("code not found");
             return response;
-        }else if (order.get().getCompleted() == true){
-            response.setMessage("fail to pay");
-            response.setErrors("payment already successfull");
-            return response;
         }
         Order order1 = order.get();
         order1.setCompleted(true);
