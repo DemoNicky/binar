@@ -11,13 +11,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping(path = "/api/v1/user")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
+    @PostMapping(path = "/login",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public JwtResponse login(@RequestBody JwtRequest jwtRequest) throws Exception {
+        return userService.createJwtToken(jwtRequest);
+    }
+
     @PostMapping(
+            path = "/register",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -41,7 +51,7 @@ public class UserController {
     }
 
     @PutMapping(
-            path = "/{usercode}",
+            path = "/{usercodeupdate}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<UserResponseDTO>>updateUser(@PathVariable("usercode")String code, @RequestBody UserRequestUpdateDTO request){
