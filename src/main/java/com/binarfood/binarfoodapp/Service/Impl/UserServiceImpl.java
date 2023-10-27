@@ -3,21 +3,93 @@ package com.binarfood.binarfoodapp.Service.Impl;
 import com.binarfood.binarfoodapp.DTO.*;
 import com.binarfood.binarfoodapp.Entity.Role;
 import com.binarfood.binarfoodapp.Entity.User;
+import com.binarfood.binarfoodapp.Repository.RoleRepository;
 import com.binarfood.binarfoodapp.Repository.UserRepository;
 import com.binarfood.binarfoodapp.Service.UserService;
+import com.binarfood.binarfoodapp.Util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import javax.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class UserServiceImpl implements UserService {
+@Slf4j
+@Transactional
+public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
+        String username = jwtRequest.getUsername();
+        String password = jwtRequest.getPassword();
+
+        authenticate(username, password);
+
+        final UserDetails userDetails = loadUserByUsername(username);
+
+        String newToken = jwtUtil.generateToken(userDetails);
+
+        User user = userRepository.findByUsername(username).get();
+
+        return new JwtResponse(user, newToken);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username).get();
+        if (user != null){
+            return new org.springframework.security.core.userdetails.User(
+                    user.getUsername(), user.getPassword(),getAuthorities(user)
+            );
+        }else {
+            throw new UsernameNotFoundException("Username is not found");
+        }
+    }
+
+    private Set getAuthorities(User user){
+        Set authorities = new HashSet();
+        user.getRole().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
+        });
+        return authorities;
+    }
+
+    private void authenticate(String username, String password) throws Exception {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        }catch (DisabledException e){
+            throw new Exception("User is Disable");
+        }catch (BadCredentialsException e){
+            System.out.println(e);
+            throw new Exception("Bad Credential from user");
+        }
+    }
+
 
     @Override
     public UserRegisterResponseDTO register(UserRegisterRequsetDTO requset) {
@@ -35,12 +107,21 @@ public class UserServiceImpl implements UserService {
         user.setUserCode(getKode());
         user.setUsername(requset.getUsername());
         user.setEmail(requset.getEmail());
-        user.setPassword(requset.getPassword());
-        user.setRole(Role.USER);
+        String pass = getEncryptPass(requset);
+        user.setPassword(pass);
+        Role role = roleRepository.findByRoleName("USER");
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        user.setRole(roles);
         user.setDeleted(false);
         userRepository.save(user);
         userRegisterResponseDTO.setMessage("Success to register");
         return userRegisterResponseDTO;
+    }
+
+    private String getEncryptPass(UserRegisterRequsetDTO requset) {
+        String pass = passwordEncoder.encode(requset.getPassword());
+        return pass;
     }
 
     @Override
@@ -110,4 +191,7 @@ public class UserServiceImpl implements UserService {
         String kode = uuid.toString().substring(0, 5);
         return kode;
     }
+
+
+
 }

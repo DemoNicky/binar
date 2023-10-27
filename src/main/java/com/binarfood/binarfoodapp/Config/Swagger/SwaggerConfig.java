@@ -1,4 +1,4 @@
-package com.binarfood.binarfoodapp.Swagger;
+package com.binarfood.binarfoodapp.Config.Swagger;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

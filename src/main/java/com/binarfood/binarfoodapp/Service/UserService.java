@@ -13,4 +13,6 @@ public interface UserService {
     ResponseHandling<UserResponseDTO> updateUser(String code, UserRequestUpdateDTO request);
 
     UserResponseDeleteDTO deleteData(String code);
+
+    JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception;
 }
