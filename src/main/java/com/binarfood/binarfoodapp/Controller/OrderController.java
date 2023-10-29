@@ -44,8 +44,8 @@ public class OrderController {
     }
 
     @GetMapping(
-            path = "/{usercode}"
-//            produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/{usercode}",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<List<OrderGetResponseDTO>>>getOrder(@PathVariable("usercode")String code){
         ResponseHandling<List<OrderGetResponseDTO>> response = orderService.getOrder(code);

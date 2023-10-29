@@ -43,10 +43,20 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         httpSecurity.csrf().disable()
                 .authorizeRequests().antMatchers("/api/v1/user/login").permitAll()
                 .antMatchers("/api/v1/user/register").permitAll()
+                .antMatchers("/api/v1/product/{name}", "/api/v1/product/get/{page}").permitAll()
+                .antMatchers("/api/v1/merchant/{page}").permitAll()
 
                 .antMatchers("/api/v1/user", "/api/v1/user/{usercode}").hasAuthority("ADMIN")
+                .antMatchers("/api/v1/role").hasAuthority("ADMIN")
+                .antMatchers("/api/v1/product").hasAuthority("ADMIN")
+                .antMatchers("/api/v1/merchant", "/api/v1/merchant/**").hasAuthority("ADMIN")
+
+
 
                 .antMatchers("/api/v1/user/{usercodeupdate}").hasAuthority("USER")
+                .antMatchers("/api/v1/user/{usercode}").hasAuthority("USER")
+                .antMatchers("/api/v1/order").hasAuthority("USER")
+
                 
 
                 .antMatchers(HttpHeaders.ALLOW).permitAll()

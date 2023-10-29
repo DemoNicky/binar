@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@Transactional
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Autowired
@@ -44,19 +43,27 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
-        String username = jwtRequest.getUsername();
-        String password = jwtRequest.getPassword();
+    public ResponseHandling<JwtResponse> createJwtToken(JwtRequest jwtRequest) throws Exception {
+        ResponseHandling<JwtResponse> response = new ResponseHandling<>();
+        try {
+            String username = jwtRequest.getUsername();
+            String password = jwtRequest.getPassword();
 
-        authenticate(username, password);
+            authenticate(username, password);
 
-        final UserDetails userDetails = loadUserByUsername(username);
+            final UserDetails userDetails = loadUserByUsername(username);
 
-        String newToken = jwtUtil.generateToken(userDetails);
+            String newToken = jwtUtil.generateToken(userDetails);
 
-        User user = userRepository.findByUsername(username).get();
+            User user = userRepository.findByUsername(username).get();
 
-        return new JwtResponse(user, newToken);
+            response.setData(new JwtResponse(user.getUserCode(), user.getUsername(), newToken));
+            response.setMessage("Authentication successful");
+        }catch (Exception e){
+            response.setErrors("Failed to login");
+            response.setMessage("Authentication failed: " + e.getMessage());
+        }
+        return response;
     }
 
     @Override

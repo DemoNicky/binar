@@ -31,7 +31,7 @@ public class ProductController {
     }
 
     @GetMapping(
-            path = "/{page}",
+            path = "/get/{page}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<List<ProductGetResponseDTO>>>getAllProduct(@PathVariable("page")int page){
@@ -44,9 +44,10 @@ public class ProductController {
     }
 
     @GetMapping(
+            path = "/{name}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ResponseHandling<List<ProductGetResponseDTO>>>getDataByName(@RequestParam String name){
+    public ResponseEntity<ResponseHandling<List<ProductGetResponseDTO>>>getDataByName(@PathVariable("name") String name){
         ResponseHandling<List<ProductGetResponseDTO>> response = productService.getDataByName(name);
         if (response.getData()==null){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);

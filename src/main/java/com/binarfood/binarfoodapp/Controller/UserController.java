@@ -22,8 +22,12 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public JwtResponse login(@RequestBody JwtRequest jwtRequest) throws Exception {
-        return userService.createJwtToken(jwtRequest);
+    public ResponseEntity<ResponseHandling<JwtResponse>> login(@RequestBody JwtRequest jwtRequest) throws Exception {
+        ResponseHandling<JwtResponse> response = userService.createJwtToken(jwtRequest);
+        if (response.getData() == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PostMapping(

@@ -14,5 +14,5 @@ public interface UserService {
 
     UserResponseDeleteDTO deleteData(String code);
 
-    JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception;
+    ResponseHandling<JwtResponse> createJwtToken(JwtRequest jwtRequest) throws Exception;
 }
