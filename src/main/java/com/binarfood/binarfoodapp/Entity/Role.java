@@ -22,4 +22,6 @@ public class Role {
     @Column(name = "role_name", length = 10, unique = true)
     private String roleName;
 
+    public Role(String admin) {
+    }
 }

@@ -70,7 +70,7 @@ public class MerchantServiceImpl implements MerchantService {
         ResponseHandling<List<MerchantResponseDTO>> response = new ResponseHandling<>();
         if (merchants.isEmpty()){
             response.setMessage("Fail to get data");
-            response.setErrors("Merchant with page number " +pageable.getPageNumber()+ "is empty");
+            response.setErrors("Merchant with page number " +pageable.getPageNumber()+ " is empty");
             return response;
         }else {
             List<MerchantResponseDTO> responseDTOS = merchants.stream().map((p) -> {
@@ -121,7 +121,7 @@ public class MerchantServiceImpl implements MerchantService {
         Optional<Merchant> merchant = merchantRepository.findByMerchantCode(code);
         MerchantDeleteResponseDTO response = new MerchantDeleteResponseDTO();
         if (!merchant.isPresent()){
-            response.setMessage("Failed to delete data ");
+            response.setMessage("Failed to delete data");
             response.setErrors("code not found");
             return response;
         }else {

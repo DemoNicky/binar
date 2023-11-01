@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return authorities;
     }
 
-    private void authenticate(String username, String password) throws Exception {
+    public void authenticate(String username, String password) throws Exception {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         }catch (DisabledException e){
