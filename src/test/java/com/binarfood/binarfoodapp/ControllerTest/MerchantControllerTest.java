@@ -1,9 +1,7 @@
 package com.binarfood.binarfoodapp.ControllerTest;
 
 import com.binarfood.binarfoodapp.Controller.MerchantController;
-import com.binarfood.binarfoodapp.DTO.MerchantRequestDTO;
-import com.binarfood.binarfoodapp.DTO.MerchantResponseDTO;
-import com.binarfood.binarfoodapp.DTO.ResponseHandling;
+import com.binarfood.binarfoodapp.DTO.*;
 import com.binarfood.binarfoodapp.Service.MerchantService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class MerchantControllerTest {
@@ -52,7 +51,7 @@ public class MerchantControllerTest {
 
         ResponseHandling<MerchantResponseDTO> successHandling = new ResponseHandling<>(successResponse, "Success message", null);
 
-        Mockito.when(merchantService.createMerchant(merchantRequestDTO))
+        when(merchantService.createMerchant(merchantRequestDTO))
                 .thenReturn(successHandling);
 
         ResponseEntity<ResponseHandling<MerchantResponseDTO>> response = merchantController.createMerchant(merchantRequestDTO);
@@ -76,7 +75,7 @@ public class MerchantControllerTest {
         // Create an error response using your ResponseHandling class
         ResponseHandling<MerchantResponseDTO> errorHandling = new ResponseHandling<>(null, "Error message", "Invalid request");
 
-        Mockito.when(merchantService.createMerchant(invalidRequest))
+        when(merchantService.createMerchant(invalidRequest))
                 .thenReturn(errorHandling);
 
         ResponseEntity<ResponseHandling<MerchantResponseDTO>> response = merchantController.createMerchant(invalidRequest);
@@ -97,7 +96,7 @@ public class MerchantControllerTest {
 
         ResponseHandling<List<MerchantResponseDTO>> successHandling = new ResponseHandling<>(activeMerchants, "Success message", null);
 
-        Mockito.when(merchantService.getData(Mockito.any(Pageable.class)))
+        when(merchantService.getData(Mockito.any(Pageable.class)))
                 .thenReturn(successHandling);
 
         ResponseEntity<ResponseHandling<List<MerchantResponseDTO>>> response = merchantController.getActiveMerchant(page);
@@ -117,7 +116,7 @@ public class MerchantControllerTest {
         List<MerchantResponseDTO> emptyMerchants = new ArrayList<>();
         ResponseHandling<List<MerchantResponseDTO>> errorHandling = new ResponseHandling<>(null, "Error message", "No active merchants found");
 
-        Mockito.when(merchantService.getData(Mockito.any(Pageable.class)))
+        when(merchantService.getData(Mockito.any(Pageable.class)))
                 .thenReturn(errorHandling);
 
         ResponseEntity<ResponseHandling<List<MerchantResponseDTO>>> response = merchantController.getActiveMerchant(page);
@@ -131,4 +130,90 @@ public class MerchantControllerTest {
         assertEquals("No active merchants found", responseBody.getErrors());
     }
 
+    @Test
+    public void testUpdateMerchant_Success() {
+        String merchantCode = "sampleCode";
+        MerchantResponseDTO updatedMerchant = new MerchantResponseDTO();
+        updatedMerchant.setMerchantCode(merchantCode);
+        updatedMerchant.setMerchantName("Updated Name");
+        updatedMerchant.setMerchantLocation("Updated Location");
+        updatedMerchant.setOpen("Updated Status");
+
+        ResponseHandling<MerchantResponseDTO> successHandling = new ResponseHandling<>(updatedMerchant, "Success message", null);
+
+        when(merchantService.updateMerchant(Mockito.eq(merchantCode), Mockito.any(MerchantUpdateRequest.class)))
+                .thenReturn(successHandling);
+
+        ResponseEntity<ResponseHandling<MerchantResponseDTO>> response = merchantController.updateMerchant(merchantCode, new MerchantUpdateRequest());
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        ResponseHandling<MerchantResponseDTO> responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals("Success message", responseBody.getMessage());
+        assertEquals(updatedMerchant, responseBody.getData());
+    }
+
+    @Test
+    public void testUpdateMerchant_NotFound() {
+        String merchantCode = "nonExistentCode";
+        ResponseHandling<MerchantResponseDTO> errorHandling = new ResponseHandling<>(null, "Error message", "Merchant not found");
+
+        when(merchantService.updateMerchant(Mockito.eq(merchantCode), Mockito.any(MerchantUpdateRequest.class)))
+                .thenReturn(errorHandling);
+
+        ResponseEntity<ResponseHandling<MerchantResponseDTO>> response = merchantController.updateMerchant(merchantCode, new MerchantUpdateRequest());
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+
+        ResponseHandling<MerchantResponseDTO> responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals("Error message", responseBody.getMessage());
+        assertEquals("Merchant not found", responseBody.getErrors());
+    }
+
+    @Test
+    public void testDeleteData_Success() {
+        String merchantCode = "existingCode";
+        MerchantDeleteResponseDTO successResponse = new MerchantDeleteResponseDTO();
+        successResponse.setMessage("Merchant deleted successfully");
+
+        when(merchantService.deleteData(merchantCode)).thenReturn(successResponse);
+
+        ResponseEntity<MerchantDeleteResponseDTO> response = merchantController.deleteData(merchantCode);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        MerchantDeleteResponseDTO responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals("Merchant deleted successfully", responseBody.getMessage());
+        assertEquals(null, responseBody.getErrors());
+
+        verify(merchantService, times(1)).deleteData(merchantCode);
+    }
+
+    @Test
+    public void testDeleteData_NotFound() {
+        String merchantCode = "nonExistentCode";
+        MerchantDeleteResponseDTO errorResponse = new MerchantDeleteResponseDTO();
+        errorResponse.setMessage("Error message");
+        errorResponse.setErrors("Merchant not found");
+
+        when(merchantService.deleteData(merchantCode)).thenReturn(errorResponse);
+
+        ResponseEntity<MerchantDeleteResponseDTO> response = merchantController.deleteData(merchantCode);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+
+        MerchantDeleteResponseDTO responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals("Error message", responseBody.getMessage());
+        assertEquals("Merchant not found", responseBody.getErrors());
+
+        verify(merchantService, times(1)).deleteData(merchantCode);
+    }
 }

@@ -163,7 +163,7 @@ public class OrderServiceImpl implements OrderService {
         JasperExportManager.exportReportToPdfFile(jasperPrint, "C:\\Binar\\pdf\\recipt.pdf");
     }
 
-    private List<CustomFileDTO> getCustomFileDTOS(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+    public List<CustomFileDTO> getCustomFileDTOS(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
         List<CustomFileDTO> customFileProduct = productOrderResponseDTOS.stream().map((p)->{
             CustomFileDTO customFileProductDTO = new CustomFileDTO();
             customFileProductDTO.setProductCode(p.getProductCode());
@@ -225,7 +225,7 @@ public class OrderServiceImpl implements OrderService {
         return response;
     }
 
-    private List<ProductOrderResponseDTO> getProductOrderResponseDTOS(Order order1) {
+    public List<ProductOrderResponseDTO> getProductOrderResponseDTOS(Order order1) {
         List<ProductOrderResponseDTO> productOrderResponseDTOS = order1.getOrderDetail().stream().map((p)->{
             ProductOrderResponseDTO responseDTO = new ProductOrderResponseDTO();
             responseDTO.setProductCode(p.getProduct().getProductCode());
@@ -239,7 +239,7 @@ public class OrderServiceImpl implements OrderService {
         return productOrderResponseDTOS;
     }
 
-    private BigDecimal getTotalPrice(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+    public BigDecimal getTotalPrice(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (ProductOrderResponseDTO responseDTO: productOrderResponseDTOS){
             BigDecimal productPrice = responseDTO.getPrice();
@@ -250,7 +250,7 @@ public class OrderServiceImpl implements OrderService {
         return totalPrice;
     }
 
-    private int getAnInt(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
+    public int getAnInt(List<ProductOrderResponseDTO> productOrderResponseDTOS) {
         int qty = 0;
         for (ProductOrderResponseDTO res : productOrderResponseDTOS){
             qty += res.getQty();
@@ -287,7 +287,7 @@ public class OrderServiceImpl implements OrderService {
         return productResponseDTOS;
     }
 
-    private BigDecimal getBigDecimal(List<OrderDetail> orderDetails) {
+    public BigDecimal getBigDecimal(List<OrderDetail> orderDetails) {
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (OrderDetail detail : orderDetails) {
             BigDecimal productPrice = detail.getProduct().getPrice();
@@ -298,7 +298,7 @@ public class OrderServiceImpl implements OrderService {
         return totalPrice;
     }
 
-    private int getQty(List<OrderDetail> orderDetails) {
+    public int getQty(List<OrderDetail> orderDetails) {
         int qty = 0;
         for (OrderDetail orderDetail : orderDetails) {
             qty += orderDetail.getQuantity();
