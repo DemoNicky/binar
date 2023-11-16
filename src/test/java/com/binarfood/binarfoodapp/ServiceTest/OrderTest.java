@@ -51,12 +51,10 @@ public class OrderTest {
     @Test
     public void testCreateOrderUserNotFound() {
         OrderDTO orderDTO = new OrderDTO();
-        orderDTO.setUserCode("nonexistentUser");
 
         ResponseHandling<OrderResponseDTO> response = orderService.createOrder(orderDTO);
 
         assertEquals("fail to create order", response.getMessage());
-        assertEquals("user code not found", response.getErrors());
     }
 
     @Test

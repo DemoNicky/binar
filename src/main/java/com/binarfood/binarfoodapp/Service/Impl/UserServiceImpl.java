@@ -19,8 +19,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -98,33 +98,43 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-
+    @Transactional
     @Override
     public UserRegisterResponseDTO register(UserRegisterRequsetDTO requset) {
-        UserRegisterResponseDTO userRegisterResponseDTO = new UserRegisterResponseDTO();
-        if (userRepository.existsByEmail(requset.getEmail())){
-            userRegisterResponseDTO.setMessage("Fail to register");
-            userRegisterResponseDTO.setError("Email is already exists");
-            return userRegisterResponseDTO;
-        }else if (userRepository.existsByUsername(requset.getUsername())){
-            userRegisterResponseDTO.setMessage("Fail to register");
-            userRegisterResponseDTO.setError("username is already exists");
-            return userRegisterResponseDTO;
+        UserRegisterResponseDTO response = new UserRegisterResponseDTO();
+
+        try {
+            if (userRepository.existsByEmail(requset.getEmail())) {
+                response.setMessage("Fail to register");
+                response.setError("Email is already exists");
+                return response;
+            } else if (userRepository.existsByUsername(requset.getUsername())) {
+                response.setMessage("Fail to register");
+                response.setError("Username is already exists");
+                return response;
+            }
+
+            User user = new User();
+            user.setUserCode(getKode());
+            user.setUsername(requset.getUsername());
+            user.setEmail(requset.getEmail());
+            String encryptedPassword = getEncryptPass(requset);
+            user.setPassword(encryptedPassword);
+            Role role = roleRepository.findByRoleName("USER");
+            Set<Role> roles = new HashSet<>();
+            roles.add(role);
+            user.setRole(roles);
+            user.setDeleted(false);
+            userRepository.save(user);
+
+            response.setMessage("Success to register");
+        } catch (Exception e) {
+            log.error("Error during user registration", e);
+            response.setMessage("Fail to register");
+            response.setError("An error occurred during registration");
         }
-        User user = new User();
-        user.setUserCode(getKode());
-        user.setUsername(requset.getUsername());
-        user.setEmail(requset.getEmail());
-        String pass = getEncryptPass(requset);
-        user.setPassword(pass);
-        Role role = roleRepository.findByRoleName("USER");
-        Set<Role> roles = new HashSet<>();
-        roles.add(role);
-        user.setRole(roles);
-        user.setDeleted(false);
-        userRepository.save(user);
-        userRegisterResponseDTO.setMessage("Success to register");
-        return userRegisterResponseDTO;
+
+        return response;
     }
 
     private String getEncryptPass(UserRegisterRequsetDTO requset) {

@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/v1/merchant")
@@ -23,11 +24,15 @@ public class MerchantController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<MerchantResponseDTO>> createMerchant(@RequestBody MerchantRequestDTO merchantRequestDTO){
-        ResponseHandling<MerchantResponseDTO> responseDTO = merchantService.createMerchant(merchantRequestDTO);
-        if (responseDTO.getData() == null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDTO);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        CompletableFuture<ResponseHandling<MerchantResponseDTO>> future = CompletableFuture.supplyAsync(() ->
+                merchantService.createMerchant(merchantRequestDTO));
+
+        return future.thenApplyAsync(responseDTO -> {
+            if (responseDTO.getData() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDTO);
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        }).join();
     }
 
     @GetMapping(
@@ -48,12 +53,16 @@ public class MerchantController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<MerchantResponseDTO>> updateMerchant(@PathVariable("merchantCode")String code, @RequestBody MerchantUpdateRequest requestDTO){
-        ResponseHandling<MerchantResponseDTO> response = merchantService.updateMerchant(code, requestDTO);
-        if (response.getData() == null){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }else {
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }
+        CompletableFuture<ResponseHandling<MerchantResponseDTO>> future = CompletableFuture.supplyAsync(() ->
+                merchantService.updateMerchant(code, requestDTO));
+
+        return future.thenApplyAsync(response -> {
+            if (response.getData() == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+        }).join();
     }
 
     @DeleteMapping(path = "/{merchantCode}",

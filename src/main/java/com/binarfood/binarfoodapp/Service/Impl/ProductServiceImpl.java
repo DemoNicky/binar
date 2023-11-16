@@ -6,10 +6,12 @@ import com.binarfood.binarfoodapp.Entity.Product;
 import com.binarfood.binarfoodapp.Repository.MerchantRepository;
 import com.binarfood.binarfoodapp.Repository.ProductRepository;
 import com.binarfood.binarfoodapp.Service.ProductService;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,34 +28,39 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private MerchantRepository merchantRepository;
 
+    @Transactional
     @Override
     public ResponseHandling<ProductResponseDTO> createProduct(ProductRequestDTO productRequestDTO) {
         Optional<Merchant> merchant = merchantRepository.findByMerchantCode(productRequestDTO.getMerchantCode());
         ResponseHandling<ProductResponseDTO> response = new ResponseHandling<>();
 
-        if (merchant.isPresent()){
-            String uuidCode = GetUUIDCode();
-            Product product = new Product();
-            product.setProductCode(uuidCode);
-            product.setProductName(productRequestDTO.getProductName());
-            product.setPrice(productRequestDTO.getPrice());
-            product.setActive(true);
-            product.setMerchant(merchant.get());
-            productRepository.save(product);
+        if (merchant.isPresent()) {
+            try {
+                String uuidCode = GetUUIDCode();
+                Product product = new Product();
+                product.setProductCode(uuidCode);
+                product.setProductName(productRequestDTO.getProductName());
+                product.setPrice(productRequestDTO.getPrice());
+                product.setActive(true);
+                product.setMerchant(merchant.get());
+                productRepository.save(product);
 
-            ProductResponseDTO responseDTO = new ProductResponseDTO();
-            responseDTO.setProductCode(product.getProductCode());
-            responseDTO.setProductName(product.getProductName());
-            responseDTO.setPrice(product.getPrice());
-            responseDTO.setKodeMerchant(product.getMerchant().getMerchantCode());
+                ProductResponseDTO responseDTO = new ProductResponseDTO();
+                responseDTO.setProductCode(product.getProductCode());
+                responseDTO.setProductName(product.getProductName());
+                responseDTO.setPrice(product.getPrice());
+                responseDTO.setKodeMerchant(product.getMerchant().getMerchantCode());
 
-            response.setData(responseDTO);
-            response.setMessage("success create new product");
-            return response;
-        }else {
+                response.setData(responseDTO);
+                response.setMessage("success create new product");
+            } catch (Exception e) {
+                response.setErrors("Failed to create product");
+            }
+        } else {
             response.setErrors("Merchant kode Not found!!!");
-            return response;
         }
+
+        return response;
     }
 
     @Override

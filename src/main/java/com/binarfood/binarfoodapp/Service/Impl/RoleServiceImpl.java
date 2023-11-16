@@ -17,6 +17,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public String saveRole(String roleName) {
+
         Role role = new Role();
         role.setRoleName(roleName);
         roleRepository.save(role);

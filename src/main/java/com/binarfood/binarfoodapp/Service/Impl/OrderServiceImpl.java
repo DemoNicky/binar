@@ -14,7 +14,10 @@ import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ResourceUtils;
 
 import java.io.*;
@@ -38,12 +41,12 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private UserRepository userRepository;
 
-
-
+    @Transactional
     @Override
     public ResponseHandling<OrderResponseDTO> createOrder(OrderDTO orderDTO) {
         ResponseHandling<OrderResponseDTO> response = new ResponseHandling<>();
-        Optional<User> user = userRepository.findByUserCode(orderDTO.getUserCode());
+        String userCode = getAuth();
+        Optional<User> user = userRepository.findByUsername(userCode);
         if (!user.isPresent()) {
             response.setMessage("fail to create order");
             response.setErrors("user code not found");
@@ -91,6 +94,13 @@ public class OrderServiceImpl implements OrderService {
         return response;
     }
 
+    private String getAuth() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userCode = authentication.getName();
+        return userCode;
+    }
+
+    @Transactional
     @Override
     public ResponseHandling<OrderPaymentResponseDTO> payment(String code) throws FileNotFoundException, JRException {
         Optional<Order> order = orderRepository.findByOrderCode(code);

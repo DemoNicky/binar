@@ -12,10 +12,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,15 +32,16 @@ public class MerchantServiceImpl implements MerchantService {
     @Autowired
     private MerchantRepository merchantRepository;
 
+    @Transactional
     @Override
     public ResponseHandling<MerchantResponseDTO> createMerchant(MerchantRequestDTO merchantRequestDTO) {
         ResponseHandling<MerchantResponseDTO> response = new ResponseHandling<>();
         if (merchantRepository.existsByMerchantName(merchantRequestDTO.getMerchantName()) ||
                 merchantRepository.existsByMerchantLocation(merchantRequestDTO.getMerchantLocation())) {
-                logger.warn("Fail to Create Merchant");
-                response.setErrors("name/location of merchant is already exists!!!");
-                return response;
-        }else {
+            logger.warn("Fail to Create Merchant");
+            response.setErrors("name/location of merchant is already exists!!!");
+            return response;
+        } else {
             String kode = getKode();
 
             Merchant merchant = new Merchant();
@@ -44,18 +50,45 @@ public class MerchantServiceImpl implements MerchantService {
             merchant.setMerchantLocation(merchantRequestDTO.getMerchantLocation());
             merchant.setOpen(true);
             merchant.setDeleted(false);
-            merchantRepository.save(merchant);
-            logger.info("Merchant Sukses di Buat", merchant);
-            MerchantResponseDTO merchantResponseDTO = new MerchantResponseDTO();
-            merchantResponseDTO.setMerchantCode(merchant.getMerchantCode());
-            merchantResponseDTO.setMerchantName(merchant.getMerchantName());
-            merchantResponseDTO.setMerchantLocation(merchant.getMerchantLocation());
-            merchantResponseDTO.setOpen("Buka");
 
-            response.setData(merchantResponseDTO);
-            response.setMessage("success create new merchant");
+            // Menggunakan ExecutorService untuk membuat thread
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+
+            // Dua task yang akan dijalankan secara paralel
+            Runnable saveMerchant = () -> {
+                merchantRepository.save(merchant);
+            };
+
+            Runnable createMerchantResponse = () -> {
+                MerchantResponseDTO merchantResponseDTO = new MerchantResponseDTO();
+                merchantResponseDTO.setMerchantCode(merchant.getMerchantCode());
+                merchantResponseDTO.setMerchantName(merchant.getMerchantName());
+                merchantResponseDTO.setMerchantLocation(merchant.getMerchantLocation());
+                merchantResponseDTO.setOpen("Buka");
+
+                response.setData(merchantResponseDTO);
+                response.setMessage("success create new merchant");
+            };
+
+            // Menjalankan kedua task secara paralel
+            Future<?> saveResult = executor.submit(saveMerchant);
+            Future<?> createResult = executor.submit(createMerchantResponse);
+
+            // Menunggu kedua task selesai
+            try {
+                saveResult.get();
+                createResult.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            executor.shutdown();
+
+            logger.info("Merchant Sukses di Buat", merchant);
+
             return response;
         }
+
     }
 
     private String getKode() {
@@ -116,6 +149,7 @@ public class MerchantServiceImpl implements MerchantService {
         }
     }
 
+    @Transactional
     @Override
     public MerchantDeleteResponseDTO deleteData(String code) {
         Optional<Merchant> merchant = merchantRepository.findByMerchantCode(code);

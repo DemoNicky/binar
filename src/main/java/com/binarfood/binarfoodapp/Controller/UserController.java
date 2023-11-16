@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @CrossOrigin
@@ -38,12 +39,16 @@ public class UserController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<UserRegisterResponseDTO>registerUser(@RequestBody UserRegisterRequsetDTO requset){
-        UserRegisterResponseDTO response = userService.register(requset);
-        if (response.getError()==null){
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<UserRegisterResponseDTO>registerUser(@RequestBody UserRegisterRequsetDTO request){
+        CompletableFuture<UserRegisterResponseDTO> future = CompletableFuture.supplyAsync(() ->
+                userService.register(request));
+
+        return future.thenApplyAsync(response -> {
+            if (response.getError() == null) {
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }).join();
     }
 
     @GetMapping(

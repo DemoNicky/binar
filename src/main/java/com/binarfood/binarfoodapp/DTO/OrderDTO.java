@@ -10,9 +10,6 @@ import java.util.List;
 @Setter
 public class OrderDTO {
 
-    @NotBlank(message = "user code cant null")
-    private String userCode;
-
     private String destinationAddress;
 
     @NotBlank(message = "order item cant null")

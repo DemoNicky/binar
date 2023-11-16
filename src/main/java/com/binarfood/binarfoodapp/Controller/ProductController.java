@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(path = "/api/v1/product")
@@ -24,9 +25,15 @@ public class ProductController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseHandling<ProductResponseDTO>> createProduct(@RequestBody ProductRequestDTO productRequestDTO){
-        ResponseHandling<ProductResponseDTO> productResponseDTO = productService.createProduct(productRequestDTO);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(productResponseDTO);
+        CompletableFuture<ResponseHandling<ProductResponseDTO>> future = CompletableFuture.supplyAsync(() ->
+                productService.createProduct(productRequestDTO));
+
+        return future.thenApplyAsync(productResponseDTO -> {
+            if (productResponseDTO.getData() == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(productResponseDTO);
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(productResponseDTO);
+        }).join();
     }
 
     @GetMapping(
